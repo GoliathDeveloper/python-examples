@@ -11,15 +11,36 @@ embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
 )
 query_vec = embed_fn(query_text)
 
-results = collection.query(
+# First pass: summaries only (folder-level anchors for RLM retrieval contract)
+summary_results = collection.query(
     query_embeddings=[query_vec],
-    n_results=5,
-    where={"section": "explanation"}  # optional filter
+    n_results=3,
+    where={"type": "summary"}
 )
 
-for match in results["ids"][0]:
-    print(f"Score: {match['score']:.3f}")
-    print(f"Path: {match['metadata']['path']}")
-    print(f"Chunk: {match['metadata']['chunk_index']}")
-    print(f"Snippet: {match['metadata']['snippet'][:200]}...")
-    print("-" * 80)
+# Second pass: detailed content
+content_results = collection.query(
+    query_embeddings=[query_vec],
+    n_results=5,
+    where={"type": "content"}
+)
+
+print(f"\nQuery: {query_text}")
+print("=" * 80)
+print("\n[SUMMARIES] Folder-level anchors (agent retrieval contract):")
+print("-" * 80)
+
+for i, (doc_id, metadata) in enumerate(zip(summary_results["ids"][0], summary_results["metadatas"][0]), 1):
+    print(f"\n{i}. {metadata['title']}")
+    print(f"   Path: {metadata['path']}")
+    if "folder_contents" in metadata:
+        print(f"   Contents: {metadata['folder_contents']}")
+
+print("\n" + "=" * 80)
+print("\n[CONTENT] Detailed chunks:")
+print("-" * 80)
+
+for i, (doc_id, metadata) in enumerate(zip(content_results["ids"][0], content_results["metadatas"][0]), 1):
+    print(f"\n{i}. {metadata['title']}")
+    print(f"   Path: {metadata['path']} (chunk {metadata['chunk_index']})")
+    print(f"   Section: {metadata['section']}")
