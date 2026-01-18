@@ -60,14 +60,15 @@ def process_main(html: str, base_url: str) -> str:
         if not main:
             return ""
 
-    # Convert images to base64
-    for img in main.find_all("img"):
-        src = img.get("src")
-        if not src:
-            continue
-        data_uri = to_base64(src, base_url)
-        if data_uri:
-            img["src"] = data_uri
+    # Image embedding is disabled to avoid bloating markdown.
+    # The following block is commented out to skip downloading images.
+    # for img in main.find_all("img"):
+    #     src = img.get("src")
+    #     if not src:
+    #         continue
+    #     data_uri = to_base64(src, base_url)
+    #     if data_uri:
+    #         img["src"] = data_uri
 
     # Convert the <main> content to Markdown
     return mdify(str(main), heading_style="ATX")
