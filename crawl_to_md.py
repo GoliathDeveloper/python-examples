@@ -55,7 +55,10 @@ def process_main(html: str, base_url: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
     main = soup.find("main")
     if not main:
-        return ""
+        # Fallback to <article> or <body> if <main> is missing
+        main = soup.find("article") or soup.find("body")
+        if not main:
+            return ""
 
     # Convert images to base64
     for img in main.find_all("img"):
@@ -114,6 +117,8 @@ def crawl(start_url: str, out_dir: str):
         soup = BeautifulSoup(html, "html.parser")
         for a in soup.find_all("a", href=True):
             href = a["href"]
+            # Strip fragment identifiers and query strings for deduplication
+            href = urllib.parse.urldefrag(href)[0]
             # Resolve relative URLs
             child = urllib.parse.urljoin(url, href)
             # Only follow same‑domain links
